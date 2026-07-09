@@ -1,5 +1,7 @@
 # Nexus
 
+**Repository:** [github.com/FrankAsanteVanLaarhoven/NExusio](https://github.com/FrankAsanteVanLaarhoven/NExusio)
+
 **World-Leading SOTA Socio-Technical Platform** — Production-grade monorepo implementing zero-trust security, ZKP-based age-adaptive modes, unified professional-personal context, and architecturally complete Robot/Embodied Agent integration.
 
 *Blueprint Version 1.0 | 09 July 2026*
