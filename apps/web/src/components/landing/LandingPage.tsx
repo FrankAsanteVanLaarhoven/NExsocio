@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { motion, useReducedMotion } from "framer-motion";
-import { LiquidLogo } from "./LiquidLogo";
+import { SplashVideo } from "./SplashVideo";
 import { SITE_DOMAIN } from "@/lib/site";
 import { useAuthHydrated } from "@/hooks/useAuthHydrated";
 import { useAuthStore } from "@/lib/auth-store";
@@ -11,28 +11,9 @@ import { useAuthStore } from "@/lib/auth-store";
 function AmbientBackground() {
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
-      <div className="absolute left-1/2 top-1/2 h-[min(92vw,560px)] w-[min(92vw,560px)] -translate-x-1/2 -translate-y-1/2 rounded-full border border-[#1a3a6b]/45" />
-      <div className="absolute left-1/2 top-1/2 h-[min(72vw,420px)] w-[min(72vw,420px)] -translate-x-1/2 -translate-y-1/2 rounded-full border border-[#1a3a6b]/28" />
-      <div className="absolute left-1/2 top-1/2 h-[min(52vw,300px)] w-[min(52vw,300px)] -translate-x-1/2 -translate-y-1/2 rounded-full border border-[#007bff]/18" />
-
-      {[
-        { top: "14%", left: "20%", delay: 0 },
-        { top: "24%", right: "16%", delay: 0.4 },
-        { top: "70%", left: "14%", delay: 0.8 },
-        { top: "76%", right: "22%", delay: 1.1 },
-        { top: "50%", left: "10%", delay: 0.6 },
-        { top: "58%", right: "11%", delay: 1.4 },
-      ].map((dot, i) => (
-        <motion.span
-          key={i}
-          className="absolute h-1.5 w-1.5 rounded-full bg-[#007bff]"
-          style={{ top: dot.top, left: dot.left, right: dot.right }}
-          animate={{ opacity: [0.25, 0.9, 0.25], scale: [0.8, 1.2, 0.8] }}
-          transition={{ duration: 3.5, repeat: Infinity, delay: dot.delay, ease: "easeInOut" }}
-        />
-      ))}
-
-      <div className="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-[#007bff]/12 to-transparent" />
+      <div className="absolute left-1/2 top-[42%] h-[min(95vw,600px)] w-[min(95vw,600px)] -translate-x-1/2 -translate-y-1/2 rounded-full border border-[#1a3a6b]/40" />
+      <div className="absolute left-1/2 top-[42%] h-[min(75vw,460px)] w-[min(75vw,460px)] -translate-x-1/2 -translate-y-1/2 rounded-full border border-[#1a3a6b]/25" />
+      <div className="absolute inset-x-0 bottom-0 h-56 bg-gradient-to-t from-[#007bff]/14 to-transparent" />
     </div>
   );
 }
@@ -45,7 +26,7 @@ export function LandingPage() {
   const enter = reduceMotion
     ? { initial: false as const }
     : {
-        initial: { y: 12 },
+        initial: { y: 14 },
         animate: { y: 0 },
         transition: { duration: 0.55, ease: [0.22, 1, 0.36, 1] as const },
       };
@@ -57,31 +38,32 @@ export function LandingPage() {
     >
       <AmbientBackground />
 
-      <div className="relative z-10 mx-auto flex min-h-screen w-full max-w-6xl flex-col items-center justify-center gap-12 px-6 py-14 lg:flex-row lg:items-center lg:justify-center lg:gap-20">
+      <div className="relative z-10 mx-auto flex min-h-screen w-full max-w-6xl flex-col items-center justify-center gap-10 px-6 py-12 lg:flex-row lg:items-center lg:gap-16 lg:py-16">
         <motion.div
-          className="flex w-full max-w-lg flex-col items-center text-center"
+          className="flex w-full max-w-xl flex-col items-center text-center"
           {...enter}
         >
-          <div className="mb-8 h-48 w-40 sm:h-56 sm:w-44">
-            <LiquidLogo className="h-full w-full" />
+          <div className="relative aspect-square w-full max-w-[min(100%,420px)] overflow-hidden rounded-[1.75rem] border border-white/10 bg-[#0a1628] shadow-2xl shadow-black/50">
+            <div className="pointer-events-none absolute inset-0 z-10 bg-gradient-to-t from-[#0a1628]/60 via-transparent to-transparent" />
+            <SplashVideo variant="hero" />
           </div>
 
-          <h1 className="text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl">
+          <h1 className="mt-8 text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl">
             <span style={{ color: "#ffffff" }}>Nex</span>
             <span style={{ color: "#007bff" }}>Socio</span>
           </h1>
 
-          <p className="mt-4 text-xs font-semibold tracking-[0.38em] text-white/75 sm:text-sm">
+          <p className="mt-3 text-xs font-semibold tracking-[0.38em] text-white/75 sm:text-sm">
             CONNECT. SHARE. ENGAGE.
           </p>
 
           <div className="mx-auto mt-5 h-px w-20 bg-[#007bff]/70" />
 
-          <p className="mt-6 max-w-md text-sm leading-relaxed text-white/60">
+          <p className="mt-5 max-w-md text-sm leading-relaxed text-white/60">
             Your social platform for feeds, live calls, marketplace, digital twins, and real connections.
           </p>
 
-          <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
             {hydrated && session ? (
               <Link
                 href="/feed"
@@ -107,7 +89,7 @@ export function LandingPage() {
             )}
           </div>
 
-          <p className="mt-8 text-[11px] tracking-[0.2em] text-white/40 uppercase">
+          <p className="mt-7 text-[11px] tracking-[0.2em] text-white/40 uppercase">
             {SITE_DOMAIN}
           </p>
         </motion.div>
@@ -122,27 +104,33 @@ export function LandingPage() {
                 transition: { duration: 0.55, delay: 0.12, ease: [0.22, 1, 0.36, 1] as const },
               })}
         >
-          <div className="w-[min(100%,280px)] rounded-[2rem] border border-white/12 bg-[#0d1f3c]/85 p-3 shadow-2xl shadow-black/50 backdrop-blur-md">
-            <div className="rounded-[1.6rem] border border-[#1a3a6b]/55 bg-[#0a1628] px-6 pb-8 pt-10">
-              <div className="mx-auto mb-5 h-24 w-20">
-                <LiquidLogo className="h-full w-full opacity-90" />
+          <div className="w-[min(100%,280px)] rounded-[2rem] border border-white/12 bg-[#0d1f3c]/85 p-2.5 shadow-2xl shadow-black/50 backdrop-blur-md">
+            <div className="overflow-hidden rounded-[1.55rem] border border-[#1a3a6b]/55 bg-[#0a1628]">
+              <div className="aspect-[9/16] w-full bg-[#0a1628]">
+                <SplashVideo variant="phone" />
               </div>
-              <p className="text-center text-lg font-bold">
-                <span className="text-white">Nex</span>
-                <span className="text-[#007bff]">Socio</span>
-              </p>
-              <p className="mt-1 text-center text-[9px] tracking-[0.28em] text-white/50">
-                CONNECT. SHARE. ENGAGE.
-              </p>
-              <div className="mt-6 flex justify-center gap-1.5">
-                <span className="h-1.5 w-1.5 rounded-full bg-[#007bff]" />
-                <span className="h-1.5 w-1.5 rounded-full bg-white/20" />
-                <span className="h-1.5 w-1.5 rounded-full bg-white/20" />
+              <div className="px-5 pb-6 pt-4">
+                <p className="text-center text-lg font-bold">
+                  <span className="text-white">Nex</span>
+                  <span className="text-[#007bff]">Socio</span>
+                </p>
+                <p className="mt-1 text-center text-[9px] tracking-[0.28em] text-white/50">
+                  CONNECT. SHARE. ENGAGE.
+                </p>
+                <div className="mt-4 flex justify-center gap-1.5">
+                  <span className="h-1.5 w-1.5 rounded-full bg-[#007bff]" />
+                  <span className="h-1.5 w-1.5 rounded-full bg-white/20" />
+                  <span className="h-1.5 w-1.5 rounded-full bg-white/20" />
+                </div>
               </div>
             </div>
           </div>
 
-          <div className="mt-10 rounded-2xl border border-white/12 bg-white p-4 shadow-xl shadow-black/35">
+          <p className="mt-3 text-[10px] font-medium tracking-[0.28em] text-white/40 uppercase">
+            Splash screen
+          </p>
+
+          <div className="mt-8 rounded-2xl border border-white/12 bg-white p-4 shadow-xl shadow-black/35">
             <Image
               src="/qr-nexsocio.png"
               alt={`QR code to open ${SITE_DOMAIN}`}
