@@ -156,12 +156,14 @@ cd apps/web && vercel link
 ./scripts/deploy-vercel.sh      # production deploy
 ```
 
-**DNS** (at your registrar):
+**DNS — Hostinger** (Domains → nexsocio.com → DNS Zone):
 
-| Type  | Name | Value                |
-|-------|------|----------------------|
-| A     | `@`  | `76.76.21.21`        |
-| CNAME | `www`| `cname.vercel-dns.com` |
+| Type  | Name | Value                  | TTL   |
+|-------|------|------------------------|-------|
+| A     | `@`  | `76.76.21.21`          | 14400 |
+| CNAME | `www`| `cname.vercel-dns.com` | 14400 |
+
+Run `./scripts/setup-hostinger-vercel-dns.sh` for the full checklist. In Vercel → **Settings → Domains**, add `nexsocio.com` and `www.nexsocio.com` and wait for **Valid Configuration**.
 
 `www` redirects to apex via `apps/web/vercel.json`. API subdomains (`identity.nexsocio.com`, etc.) point to your backend ingress, not Vercel.
 

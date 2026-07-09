@@ -4,9 +4,8 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 WEB="${ROOT}/apps/web"
-ENV_FILE="${WEB}/.env.production.example"
 
-echo "NEXSOCIO → Vercel deploy"
+echo "NEXSOCIO → Vercel production deploy"
 echo "  Root directory: apps/web"
 echo "  Domain:         nexsocio.com"
 echo ""
@@ -19,31 +18,22 @@ fi
 cd "${WEB}"
 
 if [[ ! -d .vercel ]]; then
-  echo "Linking project (first run)..."
+  echo "Linking Vercel project (first run)..."
   vercel link
 fi
-
-echo ""
-echo "Sync production env vars from ${ENV_FILE}"
-echo "Run once (or after URL changes):"
-echo "  ./scripts/vercel-env-sync.sh"
-echo ""
 
 if [[ "${1:-}" == "--sync-env" ]]; then
   "${ROOT}/scripts/vercel-env-sync.sh"
 fi
 
 echo "Deploying to production..."
-vercel deploy --prod
+vercel deploy --prod --yes
 
 echo ""
-echo "Add custom domain (if not already):"
+echo "Add domains in Vercel (if not linked to GitHub yet):"
 echo "  vercel domains add nexsocio.com"
 echo "  vercel domains add www.nexsocio.com"
 echo ""
-echo "DNS at your registrar:"
-echo "  A     @   → 76.76.21.21"
-echo "  CNAME www → cname.vercel-dns.com"
-echo "  (or point nameservers to Vercel)"
+"${ROOT}/scripts/setup-hostinger-vercel-dns.sh"
 echo ""
-echo "API backends (identity.nexsocio.com, etc.) deploy separately — see README."
+echo "Sync env vars: ./scripts/deploy-vercel.sh --sync-env"
