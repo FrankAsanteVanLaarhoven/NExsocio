@@ -4,13 +4,13 @@ import { dirname, join } from "path";
 import { fileURLToPath } from "url";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
-const logoMark = join(root, "apps/web/public/brand/logo-mark.png");
+const logoMark = join(root, "apps/web/public/brand/logo-mark-accent.png");
 const iconsDir = join(root, "apps/web/public/icons");
 const appDir = join(root, "apps/web/src/app");
 
 mkdirSync(iconsDir, { recursive: true });
 
-const BG = { r: 10, g: 22, b: 40, alpha: 1 };
+const BG = { r: 10, g: 10, b: 10, alpha: 1 };
 
 async function main() {
   const sharp = (await import("sharp")).default;

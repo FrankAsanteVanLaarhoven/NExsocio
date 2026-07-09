@@ -5,54 +5,64 @@ import Link from "next/link";
 
 type BrandLogoProps = {
   variant?: "header" | "icon" | "wordmark";
+  size?: "md" | "lg";
   href?: string;
   className?: string;
 };
 
-function LogoMark({ className = "" }: { className?: string }) {
+const SIZES = {
+  md: { box: "h-9 w-9", img: 36, text: "text-base sm:text-lg" },
+  lg: { box: "h-11 w-11", img: 44, text: "text-lg sm:text-xl" },
+} as const;
+
+function LogoMark({ size = "lg", className = "" }: { size?: "md" | "lg"; className?: string }) {
+  const dim = SIZES[size];
   return (
-    <>
+    <span className={`relative inline-flex shrink-0 items-center justify-center ${dim.box} ${className}`}>
       <Image
-        src="/brand/logo-mark.png"
+        src="/brand/logo-mark-accent.png"
         alt=""
-        width={32}
-        height={32}
-        className={`h-8 w-8 object-contain [html[data-theme=light]_&]:hidden ${className}`}
+        width={dim.img}
+        height={dim.img}
+        className={`${dim.box} object-contain drop-shadow-[0_0_10px_rgba(0,229,255,0.35)] [html[data-theme=light]_&]:hidden`}
         priority
         aria-hidden
       />
       <Image
-        src="/brand/logo-mark-blue.png"
+        src="/brand/logo-mark-accent-dark.png"
         alt=""
-        width={32}
-        height={32}
-        className={`hidden h-8 w-8 object-contain [html[data-theme=light]_&]:block ${className}`}
+        width={dim.img}
+        height={dim.img}
+        className={`hidden ${dim.box} object-contain [html[data-theme=light]_&]:block`}
         priority
         aria-hidden
       />
-    </>
+    </span>
   );
 }
 
-export function BrandLogo({ variant = "header", href = "/", className = "" }: BrandLogoProps) {
+export function BrandLogo({
+  variant = "header",
+  size = "lg",
+  href = "/",
+  className = "",
+}: BrandLogoProps) {
+  const textSize = SIZES[size].text;
+
   const content =
     variant === "icon" ? (
-      <span className={`relative inline-flex h-8 w-8 ${className}`}>
-        <LogoMark />
-      </span>
+      <LogoMark size={size} className={className} />
     ) : variant === "wordmark" ? (
-      <span className={`inline-flex items-center text-lg font-bold tracking-tight ${className}`}>
+      <span className={`inline-flex items-center font-bold tracking-tight ${textSize} ${className}`}>
         <span className="text-primary">Nex</span>
-        <span className="text-[#007bff]">Socio</span>
+        <span className="text-accent">Socio</span>
       </span>
     ) : (
-      <span className={`inline-flex items-center gap-2.5 ${className}`}>
-        <span className="relative inline-flex h-8 w-8 shrink-0">
-          <LogoMark />
-        </span>
-        <span className="text-base font-bold tracking-tight leading-none sm:text-lg">
+      <span className={`inline-flex items-center gap-3 ${className}`}>
+        <LogoMark size={size} />
+        <span className={`font-bold tracking-tight leading-none ${textSize}`}>
           <span className="text-primary">Nex</span>
-          <span className="text-[#007bff]">Socio</span>
+          <span className="text-accent">Socio</span>
         </span>
       </span>
     );
@@ -60,7 +70,7 @@ export function BrandLogo({ variant = "header", href = "/", className = "" }: Br
   if (!href) return content;
 
   return (
-    <Link href={href} className="inline-flex shrink-0 items-center">
+    <Link href={href} className="inline-flex shrink-0 items-center rounded-lg transition-opacity hover:opacity-90">
       {content}
     </Link>
   );

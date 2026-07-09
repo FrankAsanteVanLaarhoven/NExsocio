@@ -31,10 +31,13 @@ async function main() {
 
   await sharp(png).toFile(output);
   await sharp(png)
-    .tint({ r: 0, g: 123, b: 255 })
-    .toFile(join(root, "apps/web/public/brand/logo-mark-blue.png"));
+    .tint({ r: 0, g: 229, b: 255 })
+    .toFile(join(root, "apps/web/public/brand/logo-mark-accent.png"));
+  await sharp(png)
+    .tint({ r: 0, g: 140, b: 180 })
+    .toFile(join(root, "apps/web/public/brand/logo-mark-accent-dark.png"));
 
-  console.log(`Wrote ${output}`);
+  console.log(`Wrote ${output} + accent variants`);
 }
 
 main().catch((err) => {

@@ -6,6 +6,7 @@ import { ErrorBoundary } from "./ErrorBoundary";
 import { EphemeralHeader } from "./EphemeralHeader";
 import { LocationTracker } from "./LocationTracker";
 import { VoiceCommander } from "./VoiceCommander";
+import { APP_CONTAINER } from "@/lib/layout";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   return (
@@ -13,7 +14,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <TacticalGrid />
       <BetaBanner />
       <EphemeralHeader />
-      <main className="relative z-10 px-4 sm:px-6 py-8 sm:py-12">
+      <main className={`relative z-10 ${APP_CONTAINER} py-10 sm:py-14 lg:py-16`}>
         <ErrorBoundary>{children}</ErrorBoundary>
       </main>
       <LocationTracker />

@@ -3,7 +3,7 @@
 import { ModeBadge } from "@nexus/ui";
 import Link from "next/link";
 import { BrandLogo } from "@/components/BrandLogo";
-
+import { APP_CONTAINER } from "@/lib/layout";
 import { usePathname } from "next/navigation";
 import { useAuthHydrated } from "@/hooks/useAuthHydrated";
 import { useAuthStore } from "@/lib/auth-store";
@@ -27,9 +27,9 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-50 border-b border-[#1F1F1F] bg-[#0A0A0A]/80 backdrop-blur-md">
-      <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-6">
-        <div className="flex items-center gap-6">
-          <BrandLogo href="/" variant="header" />
+      <div className={`${APP_CONTAINER} flex h-[4.5rem] items-center justify-between gap-6`}>
+        <div className="flex items-center gap-8">
+          <BrandLogo href="/" variant="header" size="lg" />
 
           {hydrated && session && (
             <nav className="hidden sm:flex items-center gap-1">

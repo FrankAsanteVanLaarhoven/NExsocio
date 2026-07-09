@@ -30,8 +30,8 @@ export function BetaBanner() {
   if (!hydrated || !session || !cohort) return null;
 
   return (
-    <div className="border-b border-[#00E5FF]/20 bg-[#00E5FF]/5 px-6 py-1.5 text-center">
-      <p className="text-[10px] uppercase tracking-widest text-[#00E5FF]">
+    <div className="border-b border-accent-border bg-accent-subtle px-6 py-2 text-center">
+      <p className="text-[11px] font-medium uppercase tracking-[0.2em] text-accent">
         {t("common.betaBanner")} {cohort}
       </p>
     </div>
