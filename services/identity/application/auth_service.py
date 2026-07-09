@@ -24,6 +24,10 @@ from services.identity.application.auth_dtos import (
     LoginRequest,
     ParentalApprovalRequest,
     ParentalApprovalResponse,
+    PasswordEnrollBiometricRequest,
+    PasswordEnrollPinRequest,
+    PasswordEnrollWebAuthnRequest,
+    PasswordVerifyRequest,
     PinLoginRequest,
     WebAuthnChallengeResponse,
     WebAuthnLoginRequest,
@@ -107,14 +111,7 @@ class AuthService:
         if not user:
             raise HTTPException(status_code=401, detail="Face ID verification failed")
 
-        factor_result = await self.db.execute(
-            select(AuthFactorModel).where(
-                AuthFactorModel.user_id == user.id,
-                AuthFactorModel.factor_type == "face",
-                AuthFactorModel.template_hash == request.face_template_hash,
-            )
-        )
-        if not factor_result.scalar_one_or_none():
+        if not await self._match_biometric_factor(user.id, "face", request.face_template_hash):
             raise HTTPException(status_code=401, detail="Face ID verification failed")
         return self._issue_token(user, "face")
 
@@ -128,14 +125,9 @@ class AuthService:
             if request.voice_command.strip().lower() != expected:
                 raise HTTPException(status_code=401, detail="Voice command not recognized")
 
-        result = await self.db.execute(
-            select(AuthFactorModel).where(
-                AuthFactorModel.user_id == user.id,
-                AuthFactorModel.factor_type == request.factor_type,
-                AuthFactorModel.template_hash == request.template_hash,
-            )
+        factor = await self._match_biometric_factor(
+            user.id, request.factor_type, request.template_hash
         )
-        factor = result.scalar_one_or_none()
         if not factor:
             raise HTTPException(status_code=401, detail="Biometric verification failed")
         return self._issue_token(user, request.factor_type)
@@ -271,14 +263,26 @@ class AuthService:
         await self.db.commit()
 
     async def enroll_biometric(self, user_id: UUID, request: EnrollBiometricRequest) -> None:
-        self.db.add(
-            AuthFactorModel(
-                user_id=user_id,
-                factor_type=request.factor_type,
-                template_hash=request.template_hash,
-                label=request.label or request.factor_type.title(),
+        result = await self.db.execute(
+            select(AuthFactorModel).where(
+                AuthFactorModel.user_id == user_id,
+                AuthFactorModel.factor_type == request.factor_type,
             )
         )
+        existing = result.scalar_one_or_none()
+        if existing:
+            existing.template_hash = request.template_hash
+            if request.label:
+                existing.label = request.label
+        else:
+            self.db.add(
+                AuthFactorModel(
+                    user_id=user_id,
+                    factor_type=request.factor_type,
+                    template_hash=request.template_hash,
+                    label=request.label or request.factor_type.title(),
+                )
+            )
         await self.db.commit()
 
     async def get_available_methods(self, email: str) -> AvailableAuthMethods:
@@ -299,6 +303,48 @@ class AuthService:
             if bio in factors:
                 methods.append(bio)
         return AvailableAuthMethods(email=email, methods=methods)
+
+    async def webauthn_register_options_with_password(
+        self, request: PasswordVerifyRequest
+    ) -> WebAuthnChallengeResponse:
+        user = await self._verify_user_password(request.email, request.password)
+        challenge = await self._create_challenge(user_id=user.id, purpose="webauthn_register")
+        return WebAuthnChallengeResponse(
+            challenge=challenge,
+            rp_id=self.RP_ID,
+            user_id=str(user.id),
+            user_name=user.email,
+            user_display_name=user.display_name,
+        )
+
+    async def enroll_pin_with_password(self, request: PasswordEnrollPinRequest) -> None:
+        user = await self._verify_user_password(request.email, request.password)
+        await self.enroll_pin(user.id, EnrollPinRequest(pin=request.pin))
+
+    async def enroll_biometric_with_password(
+        self, request: PasswordEnrollBiometricRequest
+    ) -> None:
+        user = await self._verify_user_password(request.email, request.password)
+        await self.enroll_biometric(
+            user.id,
+            EnrollBiometricRequest(
+                factor_type=request.factor_type,
+                template_hash=request.template_hash,
+            ),
+        )
+
+    async def enroll_webauthn_with_password(
+        self, request: PasswordEnrollWebAuthnRequest
+    ) -> None:
+        user = await self._verify_user_password(request.email, request.password)
+        await self.enroll_webauthn(
+            user.id,
+            EnrollWebAuthnRequest(
+                credential_id=request.credential_id,
+                challenge=request.challenge,
+                label=request.label,
+            ),
+        )
 
     async def create_parental_approval(
         self, parent_user_id: UUID, request: ParentalApprovalRequest
@@ -397,3 +443,34 @@ class AuthService:
     @staticmethod
     def hash_template(data: str) -> str:
         return hashlib.sha256(data.encode()).hexdigest()
+
+    @staticmethod
+    def _hamming_distance(a: str, b: str) -> int:
+        if len(a) != len(b):
+            return 999
+        return sum(ch1 != ch2 for ch1, ch2 in zip(a, b))
+
+    async def _match_biometric_factor(
+        self, user_id: UUID, factor_type: str, template_hash: str
+    ) -> AuthFactorModel | None:
+        result = await self.db.execute(
+            select(AuthFactorModel).where(
+                AuthFactorModel.user_id == user_id,
+                AuthFactorModel.factor_type == factor_type,
+            )
+        )
+        factors = result.scalars().all()
+        for factor in factors:
+            if factor.template_hash == template_hash:
+                return factor
+            if factor.template_hash and self._hamming_distance(
+                factor.template_hash, template_hash
+            ) <= 12:
+                return factor
+        return None
+
+    async def _verify_user_password(self, email: str, password: str) -> UserModel:
+        user = await self._get_user_by_email(email)
+        if not user or not self._verify_password(password, user.password_hash):
+            raise HTTPException(status_code=401, detail="Invalid email or password")
+        return user

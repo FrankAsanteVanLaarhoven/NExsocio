@@ -62,9 +62,15 @@ export function CameraCapture({ mode, onCapture, onError, loading }: CameraCaptu
   async function capture() {
     if (!videoRef.current || !ready) return;
     try {
+      const rect = containerRef.current?.getBoundingClientRect();
       const hash =
         mode === "palm"
-          ? await capturePalmHash(videoRef.current, touchPoints)
+          ? await capturePalmHash(
+              videoRef.current,
+              touchPoints,
+              rect?.width ?? 320,
+              rect?.height ?? 240
+            )
           : await captureFrameHash(videoRef.current);
       onCapture(hash);
     } catch {

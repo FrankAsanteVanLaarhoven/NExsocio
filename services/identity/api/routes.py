@@ -19,6 +19,10 @@ from services.identity.application.auth_dtos import (
     LoginRequest,
     ParentalApprovalRequest,
     ParentalApprovalResponse,
+    PasswordEnrollBiometricRequest,
+    PasswordEnrollPinRequest,
+    PasswordEnrollWebAuthnRequest,
+    PasswordVerifyRequest,
     PinLoginRequest,
     WebAuthnChallengeResponse,
     WebAuthnLoginRequest,
@@ -197,6 +201,41 @@ async def webauthn_login(
     auth: Annotated[AuthService, Depends(get_auth_service)],
 ) -> ApiResponse[AuthLoginResponse]:
     return ApiResponse(data=await auth.login_webauthn(request))
+
+
+@router.post("/auth/webauthn/register/options/password", response_model=ApiResponse[WebAuthnChallengeResponse])
+async def webauthn_register_options_password(
+    request: PasswordVerifyRequest,
+    auth: Annotated[AuthService, Depends(get_auth_service)],
+) -> ApiResponse[WebAuthnChallengeResponse]:
+    return ApiResponse(data=await auth.webauthn_register_options_with_password(request))
+
+
+@router.post("/auth/factors/pin/password", response_model=ApiResponse[dict])
+async def enroll_pin_with_password(
+    request: PasswordEnrollPinRequest,
+    auth: Annotated[AuthService, Depends(get_auth_service)],
+) -> ApiResponse[dict]:
+    await auth.enroll_pin_with_password(request)
+    return ApiResponse(data={"enrolled": True})
+
+
+@router.post("/auth/factors/biometric/password", response_model=ApiResponse[dict])
+async def enroll_biometric_with_password(
+    request: PasswordEnrollBiometricRequest,
+    auth: Annotated[AuthService, Depends(get_auth_service)],
+) -> ApiResponse[dict]:
+    await auth.enroll_biometric_with_password(request)
+    return ApiResponse(data={"enrolled": True})
+
+
+@router.post("/auth/factors/webauthn/password", response_model=ApiResponse[dict])
+async def enroll_webauthn_with_password(
+    request: PasswordEnrollWebAuthnRequest,
+    auth: Annotated[AuthService, Depends(get_auth_service)],
+) -> ApiResponse[dict]:
+    await auth.enroll_webauthn_with_password(request)
+    return ApiResponse(data={"enrolled": True})
 
 
 @router.post("/auth/factors/pin", response_model=ApiResponse[dict])

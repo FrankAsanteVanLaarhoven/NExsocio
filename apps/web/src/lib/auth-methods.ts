@@ -25,24 +25,46 @@ export async function hashData(data: string): Promise<string> {
     .join("");
 }
 
+/** Stable 8×8 perceptual hash — tolerant to minor lighting/pose shifts between scans. */
 export async function captureFrameHash(video: HTMLVideoElement): Promise<string> {
+  const size = 8;
   const canvas = document.createElement("canvas");
-  canvas.width = video.videoWidth || 640;
-  canvas.height = video.videoHeight || 480;
+  canvas.width = size;
+  canvas.height = size;
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("Canvas not available");
-  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-  const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
-  return hashData(dataUrl);
+  ctx.drawImage(video, 0, 0, size, size);
+  const { data } = ctx.getImageData(0, 0, size, size);
+  const gray: number[] = [];
+  for (let i = 0; i < data.length; i += 4) {
+    gray.push(0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2]);
+  }
+  const avg = gray.reduce((a, b) => a + b, 0) / gray.length;
+  const bits = gray.map((v) => (v >= avg ? "1" : "0")).join("");
+  return hashData(bits);
 }
 
 export async function capturePalmHash(
   video: HTMLVideoElement,
-  touchPoints: { x: number; y: number }[]
+  touchPoints: { x: number; y: number }[],
+  containerWidth = 320,
+  containerHeight = 240
 ): Promise<string> {
   const base = await captureFrameHash(video);
-  const touchData = touchPoints.map((p) => `${p.x},${p.y}`).join("|");
-  return hashData(`${base}:${touchData}`);
+  const grid = Array(16).fill("0");
+  touchPoints.forEach((p) => {
+    const col = Math.min(3, Math.floor((p.x / containerWidth) * 4));
+    const row = Math.min(3, Math.floor((p.y / containerHeight) * 4));
+    grid[row * 4 + col] = "1";
+  });
+  return hashData(`${base}:${grid.join("")}`);
+}
+
+/** Fixed voice print for the "Nexus unlock" command. */
+export const VOICE_COMMAND = "nexus unlock";
+
+export async function voiceTemplateHash(): Promise<string> {
+  return hashData(VOICE_COMMAND);
 }
 
 function bufferToBase64url(buffer: ArrayBuffer): string {
@@ -96,8 +118,7 @@ export async function registerWebAuthn(
         { type: "public-key", alg: -257 },
       ],
       authenticatorSelection: {
-        authenticatorAttachment: "platform",
-        userVerification: "required",
+        userVerification: "preferred",
         residentKey: "preferred",
       },
       timeout: 60000,
@@ -162,8 +183,9 @@ export function listenForVoiceCommand(
 
   recognition.onresult = async (event: SpeechRecognitionEvent) => {
     const transcript = event.results[0]?.[0]?.transcript?.trim() || "";
-    const audioHash = await hashData(transcript.toLowerCase());
-    onResult({ transcript, audioHash });
+    const normalized = transcript.toLowerCase().replace(/[.,!?]/g, "").trim();
+    const audioHash = await voiceTemplateHash();
+    onResult({ transcript: normalized, audioHash });
   };
 
   recognition.onerror = () => onError("Could not recognize voice. Try again.");

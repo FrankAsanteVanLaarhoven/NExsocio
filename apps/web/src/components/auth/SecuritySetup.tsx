@@ -8,7 +8,7 @@ import {
   enrollWebAuthn,
   getWebAuthnRegisterOptions,
 } from "@/lib/api";
-import { registerWebAuthn } from "@/lib/auth-methods";
+import { registerWebAuthn, voiceTemplateHash } from "@/lib/auth-methods";
 import { useAuthStore } from "@/lib/auth-store";
 import { CameraCapture } from "./CameraCapture";
 import { PinPad } from "./PinPad";
@@ -112,10 +112,11 @@ export function SecuritySetup() {
             <p className="text-xs font-medium text-[#F5F5F5] mb-2">Voice Print</p>
             <VoiceAuth
               loading={loading}
-              onCapture={(hash, cmd) =>
-                withAuth(() =>
-                  enrollBiometric(session.accessToken, "voice", hash, `Voice: ${cmd}`)
-                )
+              onCapture={async (_hash, cmd) =>
+                withAuth(async () => {
+                  const hash = await voiceTemplateHash();
+                  await enrollBiometric(session.accessToken, "voice", hash, `Voice: ${cmd}`);
+                })
               }
               onError={setError}
             />

@@ -98,3 +98,29 @@ class KidsRegisterResponse(BaseModel):
 class AvailableAuthMethods(BaseModel):
     email: str
     methods: list[str]
+
+
+class PasswordEnrollPinRequest(BaseModel):
+    email: EmailStr
+    password: str = Field(..., min_length=8)
+    pin: str = Field(..., min_length=6, max_length=6, pattern=r"^\d{6}$")
+
+
+class PasswordEnrollBiometricRequest(BaseModel):
+    email: EmailStr
+    password: str = Field(..., min_length=8)
+    factor_type: str = Field(..., pattern=r"^(face|palm|voice)$")
+    template_hash: str = Field(..., min_length=16, max_length=128)
+
+
+class PasswordEnrollWebAuthnRequest(BaseModel):
+    email: EmailStr
+    password: str = Field(..., min_length=8)
+    credential_id: str
+    challenge: str
+    label: str | None = "Passkey"
+
+
+class PasswordVerifyRequest(BaseModel):
+    email: EmailStr
+    password: str = Field(..., min_length=8)

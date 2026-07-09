@@ -166,6 +166,60 @@ export async function getWebAuthnRegisterOptions(token: string): Promise<WebAuth
   });
 }
 
+export async function enrollPinWithPassword(
+  email: string,
+  password: string,
+  pin: string
+): Promise<void> {
+  await request(IDENTITY_URL, "/api/v1/auth/factors/pin/password", {
+    method: "POST",
+    body: JSON.stringify({ email, password, pin }),
+  });
+}
+
+export async function enrollBiometricWithPassword(
+  email: string,
+  password: string,
+  factorType: "face" | "palm" | "voice",
+  templateHash: string
+): Promise<void> {
+  await request(IDENTITY_URL, "/api/v1/auth/factors/biometric/password", {
+    method: "POST",
+    body: JSON.stringify({
+      email,
+      password,
+      factor_type: factorType,
+      template_hash: templateHash,
+    }),
+  });
+}
+
+export async function getWebAuthnRegisterOptionsWithPassword(
+  email: string,
+  password: string
+): Promise<WebAuthnChallenge> {
+  return request<WebAuthnChallenge>(
+    IDENTITY_URL,
+    "/api/v1/auth/webauthn/register/options/password",
+    {
+      method: "POST",
+      body: JSON.stringify({ email, password }),
+    }
+  );
+}
+
+export async function enrollWebAuthnWithPassword(
+  email: string,
+  password: string,
+  credentialId: string,
+  challenge: string
+): Promise<void> {
+  await request(IDENTITY_URL, "/api/v1/auth/factors/webauthn/password", {
+    method: "POST",
+    body: JSON.stringify({ email, password, credential_id: credentialId, challenge }),
+  });
+}
+
 export async function enrollPin(token: string, pin: string): Promise<void> {
   await request(IDENTITY_URL, "/api/v1/auth/factors/pin", {
     method: "POST",
