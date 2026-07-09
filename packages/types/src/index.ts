@@ -1,0 +1,150 @@
+export type UserMode = "kids" | "prime" | "professional";
+export type ViewContext = "personal" | "professional";
+export type FeedType = "global" | "connections" | "professional";
+export type VerificationStatus = "pending" | "verified" | "failed";
+export type ContentVisibility = "public" | "connections" | "private";
+
+export interface ApiResponse<T> {
+  success: boolean;
+  data: T | null;
+  error: string | null;
+}
+
+export interface ZKPAgeProof {
+  proof: string;
+  public_inputs: Record<string, string>;
+  minimum_age: number;
+}
+
+export interface ZKPVerificationResult {
+  verified: boolean;
+  status: VerificationStatus;
+  minimum_age_met: boolean;
+  message: string;
+  proof_hash: string | null;
+}
+
+export interface RegisterRequest {
+  email: string;
+  password: string;
+  display_name: string;
+  age_proof: ZKPAgeProof;
+}
+
+export interface RegisterResponse {
+  user_id: string;
+  email: string;
+  display_name: string;
+  mode: UserMode;
+  age_verified: boolean;
+  access_token: string;
+  zkp_result: ZKPVerificationResult;
+}
+
+export interface ModeSelectRequest {
+  mode: UserMode;
+}
+
+export interface ModeSelectResponse {
+  user_id: string;
+  mode: UserMode;
+  access_token: string;
+}
+
+export interface UserProfile {
+  id: string;
+  email: string;
+  display_name: string;
+  mode: UserMode;
+  age_verified: boolean;
+  bio?: string | null;
+  headline?: string | null;
+  skills?: string | null;
+  company?: string | null;
+  created_at?: string | null;
+}
+
+export interface PublicUser {
+  id: string;
+  display_name: string;
+  mode: UserMode;
+  bio?: string | null;
+  headline?: string | null;
+  skills?: string | null;
+  company?: string | null;
+}
+
+export interface UpdateProfileRequest {
+  display_name?: string;
+  bio?: string;
+  headline?: string;
+  skills?: string;
+  company?: string;
+  current_password?: string;
+  new_password?: string;
+}
+
+export interface CreatePostRequest {
+  body: string;
+  visibility?: ContentVisibility;
+  context?: ViewContext;
+}
+
+export interface Post {
+  id: string;
+  author_id: string;
+  author_name: string;
+  body: string;
+  mode: UserMode;
+  context: ViewContext;
+  visibility: ContentVisibility;
+  created_at: string;
+}
+
+export interface FeedResponse {
+  posts: Post[];
+  total: number;
+  feed_type: string;
+  context: string;
+}
+
+export interface Connection {
+  id: string;
+  requester_id: string;
+  recipient_id: string;
+  status: string;
+  created_at: string;
+  other_user_id: string;
+  other_display_name: string | null;
+}
+
+export interface ConnectionsListResponse {
+  connections: Connection[];
+  pending_incoming: Connection[];
+  total: number;
+}
+
+export interface ProfessionalProfile {
+  user_id: string;
+  display_name: string;
+  headline?: string | null;
+  company?: string | null;
+  skills?: string | null;
+  bio?: string | null;
+}
+
+export interface ProfessionalDashboard {
+  profile: ProfessionalProfile;
+  insights: { label: string; value: string; trend: string }[];
+  connection_suggestions: string[];
+}
+
+export interface AuthSession {
+  accessToken: string;
+  userId: string;
+  email: string;
+  displayName: string;
+  mode: UserMode;
+  ageVerified: boolean;
+  viewContext: ViewContext;
+}

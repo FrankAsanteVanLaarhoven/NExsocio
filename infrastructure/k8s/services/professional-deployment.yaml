@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: professional
+  namespace: nexus
+  labels:
+    app: professional
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: professional
+  template:
+    metadata:
+      labels:
+        app: professional
+    spec:
+      containers:
+        - name: professional
+          image: ${ECR_REGISTRY}/nexus-professional:latest
+          ports:
+            - containerPort: 8004
+          env:
+            - name: IDENTITY_SERVICE_URL
+              value: "http://identity:8001"
+            - name: CONTENT_SERVICE_URL
+              value: "http://content:8003"
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: nexus-jwt
+                  key: secret
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: professional
+  namespace: nexus
+spec:
+  selector:
+    app: professional
+  ports:
+    - port: 8004
+      targetPort: 8004

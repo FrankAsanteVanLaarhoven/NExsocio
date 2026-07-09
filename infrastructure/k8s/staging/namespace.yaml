@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: nexus-staging
+  labels:
+    environment: staging
+    project: nexus
+    istio-injection: enabled

@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: content
+  namespace: nexus
+  labels:
+    app: content
+    bounded-context: content
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: content
+  template:
+    metadata:
+      labels:
+        app: content
+    spec:
+      containers:
+        - name: content
+          image: ${ECR_REGISTRY}/nexus-content:latest
+          ports:
+            - containerPort: 8003
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: nexus-db
+                  key: url
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: nexus-jwt
+                  key: secret
+            - name: SOCIAL_GRAPH_SERVICE_URL
+              value: "http://social-graph:8002"
+          livenessProbe:
+            httpGet:
+              path: /api/v1/health
+              port: 8003
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: content
+  namespace: nexus
+spec:
+  selector:
+    app: content
+  ports:
+    - port: 8003
+      targetPort: 8003

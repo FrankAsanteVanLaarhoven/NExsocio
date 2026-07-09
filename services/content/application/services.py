@@ -1,0 +1,100 @@
+from uuid import UUID, uuid4
+
+import httpx
+from sqlalchemy import func, select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from nexus_common.domain.enums import ContentVisibility, FeedType, UserMode, ViewContext
+from services.content.application.dtos import CreatePostRequest, FeedResponse, PostResponse
+from services.content.infrastructure.config import Settings
+from services.content.infrastructure.models import PostModel
+
+
+class ContentService:
+    def __init__(self, db: AsyncSession, settings: Settings | None = None):
+        self.db = db
+        self.settings = settings or Settings()
+
+    async def create_post(
+        self,
+        author_id: UUID,
+        author_name: str,
+        mode: UserMode,
+        request: CreatePostRequest,
+    ) -> PostResponse:
+        post = PostModel(
+            id=uuid4(),
+            author_id=author_id,
+            author_name=author_name,
+            body=request.body,
+            mode=mode.value,
+            context=request.context.value,
+            visibility=request.visibility.value,
+        )
+        self.db.add(post)
+        await self.db.commit()
+        await self.db.refresh(post)
+        return self._to_response(post)
+
+    async def _get_connection_ids(self, user_id: UUID, token: str) -> list[UUID]:
+        try:
+            async with httpx.AsyncClient(timeout=5.0) as client:
+                res = await client.get(
+                    f"{self.settings.social_graph_service_url}/api/v1/connections/ids",
+                    headers={"Authorization": f"Bearer {token}"},
+                )
+                if res.status_code == 200:
+                    data = res.json().get("data", {})
+                    return [UUID(uid) for uid in data.get("user_ids", [])]
+        except (httpx.HTTPError, ValueError):
+            pass
+        return [user_id]
+
+    async def get_feed(
+        self,
+        feed_type: FeedType = FeedType.GLOBAL,
+        context: ViewContext = ViewContext.PERSONAL,
+        mode: UserMode | None = None,
+        user_id: UUID | None = None,
+        token: str | None = None,
+        limit: int = 50,
+    ) -> FeedResponse:
+        query = select(PostModel).order_by(PostModel.created_at.desc()).limit(limit)
+
+        if feed_type == FeedType.PROFESSIONAL or context == ViewContext.PROFESSIONAL:
+            query = query.where(PostModel.context == ViewContext.PROFESSIONAL.value)
+        else:
+            query = query.where(PostModel.context == ViewContext.PERSONAL.value)
+
+        if mode:
+            query = query.where(PostModel.mode == mode.value)
+
+        if feed_type == FeedType.CONNECTIONS and user_id and token:
+            connection_ids = await self._get_connection_ids(user_id, token)
+            query = query.where(PostModel.author_id.in_(connection_ids))
+
+        result = await self.db.execute(query)
+        posts = result.scalars().all()
+
+        count_query = select(func.count()).select_from(PostModel)
+        count_result = await self.db.execute(count_query)
+        total = count_result.scalar() or 0
+
+        return FeedResponse(
+            posts=[self._to_response(p) for p in posts],
+            total=total,
+            feed_type=feed_type.value,
+            context=context.value,
+        )
+
+    def _to_response(self, post: PostModel) -> PostResponse:
+        return PostResponse(
+            id=post.id,
+            author_id=post.author_id,
+            author_name=post.author_name,
+            body=post.body,
+            mode=UserMode(post.mode),
+            context=ViewContext(post.context) if post.context else ViewContext.PERSONAL,
+            visibility=ContentVisibility(post.visibility),
+            created_at=post.created_at,
+        )

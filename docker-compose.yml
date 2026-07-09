@@ -1,0 +1,92 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: nexus
+      POSTGRES_PASSWORD: nexus
+      POSTGRES_DB: nexus
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nexus"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  identity:
+    build:
+      context: .
+      dockerfile: services/identity/Dockerfile
+    ports:
+      - "8001:8001"
+    environment:
+      DATABASE_URL: postgresql+asyncpg://nexus:nexus@postgres:5432/nexus
+      JWT_SECRET: dev-secret-change-in-production
+      CORS_ORIGINS: '["http://localhost:3000"]'
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  social-graph:
+    build:
+      context: .
+      dockerfile: services/social_graph/Dockerfile
+    ports:
+      - "8002:8002"
+    environment:
+      DATABASE_URL: postgresql+asyncpg://nexus:nexus@postgres:5432/nexus
+      JWT_SECRET: dev-secret-change-in-production
+      IDENTITY_SERVICE_URL: http://identity:8001
+      CORS_ORIGINS: '["http://localhost:3000"]'
+    depends_on:
+      postgres:
+        condition: service_healthy
+      identity:
+        condition: service_started
+
+  content:
+    build:
+      context: .
+      dockerfile: services/content/Dockerfile
+    ports:
+      - "8003:8003"
+    environment:
+      DATABASE_URL: postgresql+asyncpg://nexus:nexus@postgres:5432/nexus
+      JWT_SECRET: dev-secret-change-in-production
+      SOCIAL_GRAPH_SERVICE_URL: http://social-graph:8002
+      CORS_ORIGINS: '["http://localhost:3000"]'
+    depends_on:
+      postgres:
+        condition: service_healthy
+      social-graph:
+        condition: service_started
+
+  professional:
+    build:
+      context: .
+      dockerfile: services/professional/Dockerfile
+    ports:
+      - "8004:8004"
+    environment:
+      JWT_SECRET: dev-secret-change-in-production
+      IDENTITY_SERVICE_URL: http://identity:8001
+      CONTENT_SERVICE_URL: http://content:8003
+      CORS_ORIGINS: '["http://localhost:3000"]'
+    depends_on:
+      identity:
+        condition: service_started
+
+volumes:
+  postgres_data:

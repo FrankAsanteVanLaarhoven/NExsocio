@@ -1,0 +1,24 @@
+import uuid
+from datetime import datetime
+
+from sqlalchemy import DateTime, String, Text, func
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+
+
+class Base(DeclarativeBase):
+    pass
+
+
+class PostModel(Base):
+    __tablename__ = "posts"
+    __table_args__ = {"schema": "content"}
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    author_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False, index=True)
+    author_name: Mapped[str] = mapped_column(String(64), nullable=False)
+    body: Mapped[str] = mapped_column(Text, nullable=False)
+    mode: Mapped[str] = mapped_column(String(32), nullable=False)
+    context: Mapped[str] = mapped_column(String(32), nullable=False, default="personal")
+    visibility: Mapped[str] = mapped_column(String(32), nullable=False, default="public")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

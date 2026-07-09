@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: social-graph
+  namespace: nexus
+  labels:
+    app: social-graph
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: social-graph
+  template:
+    metadata:
+      labels:
+        app: social-graph
+    spec:
+      containers:
+        - name: social-graph
+          image: ${ECR_REGISTRY}/nexus-social-graph:latest
+          ports:
+            - containerPort: 8002
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: nexus-db
+                  key: url
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: nexus-jwt
+                  key: secret
+            - name: IDENTITY_SERVICE_URL
+              value: "http://identity:8001"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: social-graph
+  namespace: nexus
+spec:
+  selector:
+    app: social-graph
+  ports:
+    - port: 8002
+      targetPort: 8002

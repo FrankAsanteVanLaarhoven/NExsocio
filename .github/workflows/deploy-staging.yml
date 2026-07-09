@@ -1,0 +1,46 @@
+name: Deploy Staging
+
+on:
+  push:
+    branches: [develop]
+  workflow_dispatch:
+
+env:
+  AWS_REGION: us-east-1
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - uses: aws-actions/amazon-ecr-login@v2
+        id: ecr
+
+      - name: Build and push images
+        env:
+          REGISTRY: ${{ secrets.ECR_REGISTRY }}
+          TAG: staging-${{ github.sha }}
+        run: |
+          for svc in identity content; do
+            docker build -f services/$svc/Dockerfile -t $REGISTRY/nexus-$svc:$TAG .
+            docker push $REGISTRY/nexus-$svc:$TAG
+            docker tag $REGISTRY/nexus-$svc:$TAG $REGISTRY/nexus-$svc:staging
+            docker push $REGISTRY/nexus-$svc:staging
+          done
+          for svc in social_graph professional; do
+            docker build -f services/$svc/Dockerfile -t $REGISTRY/nexus-${svc//_/-}:$TAG .
+            docker push $REGISTRY/nexus-${svc//_/-}:$TAG
+          done
+
+      - name: Sync ArgoCD staging
+        run: |
+          echo "ArgoCD will auto-sync nexus-staging application from infrastructure/k8s/staging"

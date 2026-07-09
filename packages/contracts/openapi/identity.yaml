@@ -1,0 +1,77 @@
+openapi: 3.1.0
+info:
+  title: Nexus Identity & Verification API
+  version: 1.0.0
+  description: ZKP age verification, registration, and mode selection
+servers:
+  - url: http://localhost:8001/api/v1
+paths:
+  /health:
+    get:
+      summary: Health check
+      responses:
+        "200":
+          description: Service healthy
+  /auth/register:
+    post:
+      summary: Register with ZKP age proof
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterRequest"
+      responses:
+        "200":
+          description: Registration successful
+  /auth/mode:
+    post:
+      summary: Select user mode
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ModeSelectRequest"
+      responses:
+        "200":
+          description: Mode updated
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+  schemas:
+    RegisterRequest:
+      type: object
+      required: [email, password, display_name, age_proof]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 8
+        display_name:
+          type: string
+        age_proof:
+          $ref: "#/components/schemas/ZKPAgeProof"
+    ZKPAgeProof:
+      type: object
+      required: [proof]
+      properties:
+        proof:
+          type: string
+        public_inputs:
+          type: object
+        minimum_age:
+          type: integer
+    ModeSelectRequest:
+      type: object
+      required: [mode]
+      properties:
+        mode:
+          type: string
+          enum: [kids, prime, professional]
