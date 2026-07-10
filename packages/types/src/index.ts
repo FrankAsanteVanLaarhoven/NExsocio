@@ -543,6 +543,7 @@ export interface CreateProductRequest {
   is_digital?: boolean;
   media_url?: string | null;
   media_type?: string | null;
+  org_id?: string | null;
 }
 
 export interface MediaUploadResult {
