@@ -7,6 +7,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from nexus_common.security.jwt import decode_access_token
+from services.professional.application.corporate_compliance import CorporateComplianceService
 from services.professional.application.services import ProfessionalService
 from services.professional.infrastructure.config import Settings
 from services.professional.infrastructure.database import get_engine, get_session_factory
@@ -66,3 +67,9 @@ async def get_professional_service(
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> ProfessionalService:
     return ProfessionalService(cfg, db)
+
+
+async def get_compliance_service(
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> CorporateComplianceService:
+    return CorporateComplianceService(db)

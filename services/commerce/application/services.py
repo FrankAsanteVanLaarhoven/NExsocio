@@ -1,5 +1,6 @@
 from uuid import UUID, uuid4
 
+import httpx
 from fastapi import HTTPException, status
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -93,12 +94,35 @@ class CommerceService:
         )
         return [self._product(p) for p in result.scalars().all()]
 
+    async def _assert_org_can_sell(self, org_id: UUID) -> None:
+        url = f"{self.settings.professional_service_url}/api/v1/organizations/{org_id}/can-sell"
+        try:
+            async with httpx.AsyncClient(timeout=5.0) as client:
+                res = await client.get(url)
+                if res.status_code >= 400:
+                    raise HTTPException(status_code=403, detail="Corporate credentials required to sell")
+                allowed = res.json().get("data", False)
+                if not allowed:
+                    raise HTTPException(
+                        status_code=403,
+                        detail="Verify corporate email and credentials before listing services",
+                    )
+        except HTTPException:
+            raise
+        except Exception as exc:
+            raise HTTPException(status_code=503, detail="Corporate verification service unavailable") from exc
+
     async def create_product(
         self, seller_id: UUID, seller_name: str, request: CreateProductRequest
     ) -> ProductResponse:
+        org_uuid: UUID | None = None
+        if request.org_id:
+            org_uuid = UUID(request.org_id)
+            await self._assert_org_can_sell(org_uuid)
         product = ProductModel(
             id=uuid4(),
             seller_id=seller_id,
+            org_id=org_uuid,
             seller_name=seller_name,
             title=request.title,
             description=request.description,

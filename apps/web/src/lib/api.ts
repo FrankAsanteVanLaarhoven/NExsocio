@@ -492,6 +492,8 @@ export async function createOrganization(
   data: {
     name: string;
     slug: string;
+    corporate_email: string;
+    sector_category: string;
     industry?: string;
     size_band?: string;
     website?: string;
@@ -499,6 +501,77 @@ export async function createOrganization(
   }
 ): Promise<import("@nexus/types").Organization> {
   return request(PROFESSIONAL_URL, "/api/v1/organizations", {
+    method: "POST",
+    headers: authHeaders(token),
+    body: JSON.stringify(data),
+  });
+}
+
+export async function listCorporateSectors(): Promise<import("@nexus/types").CorporateSector[]> {
+  return request(PROFESSIONAL_URL, "/api/v1/corporate/sectors");
+}
+
+export async function listPublicCorporateServices(
+  sector?: string
+): Promise<import("@nexus/types").CorporateServiceListing[]> {
+  const qs = sector ? `?sector=${encodeURIComponent(sector)}` : "";
+  return request(PROFESSIONAL_URL, `/api/v1/corporate/services/public${qs}`);
+}
+
+export async function getOrgCompliance(
+  token: string,
+  orgId: string
+): Promise<import("@nexus/types").CorporateComplianceStatus> {
+  return request(PROFESSIONAL_URL, `/api/v1/organizations/${orgId}/compliance`, {
+    headers: authHeaders(token),
+  });
+}
+
+export async function verifyOrgEmail(
+  token: string,
+  orgId: string,
+  corporate_email: string
+): Promise<import("@nexus/types").CorporateComplianceStatus> {
+  return request(PROFESSIONAL_URL, `/api/v1/organizations/${orgId}/verify-email`, {
+    method: "POST",
+    headers: authHeaders(token),
+    body: JSON.stringify({ corporate_email }),
+  });
+}
+
+export async function submitOrgCredentials(
+  token: string,
+  orgId: string,
+  data: {
+    sector_category: string;
+    registration_number: string;
+    license_body?: string;
+    notes?: string;
+  }
+): Promise<{ org_id: string; status: string; sector_category: string }> {
+  return request(PROFESSIONAL_URL, `/api/v1/organizations/${orgId}/credentials`, {
+    method: "POST",
+    headers: authHeaders(token),
+    body: JSON.stringify(data),
+  });
+}
+
+export async function startNetworkingTrial(
+  token: string,
+  orgId: string
+): Promise<import("@nexus/types").OrgNetworkingAccess> {
+  return request(PROFESSIONAL_URL, `/api/v1/organizations/${orgId}/subscription/trial`, {
+    method: "POST",
+    headers: authHeaders(token),
+  });
+}
+
+export async function createCorporateService(
+  token: string,
+  orgId: string,
+  data: { title: string; description?: string; price_hint?: string }
+): Promise<import("@nexus/types").CorporateServiceListing> {
+  return request(PROFESSIONAL_URL, `/api/v1/organizations/${orgId}/services`, {
     method: "POST",
     headers: authHeaders(token),
     body: JSON.stringify(data),

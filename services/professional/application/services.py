@@ -5,6 +5,13 @@ from fastapi import HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from nexus_common.domain.corporate_sectors import (
+    CORPORATE_SECTORS,
+    SECTOR_IDS,
+    extract_email_domain,
+    is_corporate_email,
+)
+from services.professional.application.corporate_compliance import CorporateComplianceService
 from services.professional.application.dtos import (
     BusinessProfileResponse,
     CorporateDashboardResponse,
@@ -85,15 +92,24 @@ class ProfessionalService:
     async def get_corporate_dashboard(self, token: str, user_id: UUID) -> CorporateDashboardResponse:
         profile = await self.get_profile(token)
         memberships = await self.list_memberships(user_id)
+        compliance: list = []
+        networking: list = []
+        if self.db:
+            compliance_svc = CorporateComplianceService(self.db)
+            for m in memberships:
+                compliance.append(await compliance_svc.get_compliance(m.org_id))
+                networking.append(await compliance_svc.networking_access(m.org_id))
         return CorporateDashboardResponse(
             profile=profile,
             memberships=memberships,
             insights=[
                 NetworkInsight(label="Companies", value=str(len(memberships)), trend="neutral"),
-                NetworkInsight(label="Industry reach", value="Technology", trend="up"),
-                NetworkInsight(label="Profile viewers", value="42", trend="up"),
+                NetworkInsight(label="Verified orgs", value=str(sum(1 for c in compliance if c.can_serve_public)), trend="up"),
+                NetworkInsight(label="Networking", value=str(sum(1 for n in networking if n.networking_allowed)), trend="neutral"),
             ],
             hiring_posts=0,
+            compliance=compliance,
+            networking_access=networking,
         )
 
     async def get_business_profile(self, user_id: UUID) -> BusinessProfileResponse | None:
@@ -145,12 +161,18 @@ class ProfessionalService:
             tagline=row.tagline,
         )
 
-    async def list_organizations(self, industry: str | None = None) -> list[OrganizationResponse]:
+    async def list_organizations(
+        self, industry: str | None = None, sector: str | None = None, public_only: bool = False
+    ) -> list[OrganizationResponse]:
         if not self.db:
             return []
         query = select(OrganizationModel).order_by(OrganizationModel.name.asc())
         if industry:
             query = query.where(OrganizationModel.industry == industry)
+        if sector:
+            query = query.where(OrganizationModel.sector_category == sector)
+        if public_only:
+            query = query.where(OrganizationModel.can_serve_public.is_(True))
         result = await self.db.execute(query.limit(50))
         return [self._org(row) for row in result.scalars().all()]
 
@@ -164,14 +186,29 @@ class ProfessionalService:
         )
         if existing.scalar_one_or_none():
             raise HTTPException(status_code=409, detail="Organization slug already exists")
+        if not is_corporate_email(request.corporate_email):
+            raise HTTPException(
+                status_code=400,
+                detail="Corporate email required — use your company domain, not Gmail/Yahoo/etc.",
+            )
+        if request.sector_category not in SECTOR_IDS:
+            raise HTTPException(status_code=400, detail="Invalid sector category")
+        domain = extract_email_domain(request.corporate_email)
+        sector_label = next((s["label"] for s in CORPORATE_SECTORS if s["id"] == request.sector_category), request.sector_category)
         org = OrganizationModel(
             id=uuid4(),
             name=request.name,
             slug=request.slug,
-            industry=request.industry,
+            industry=request.industry or sector_label,
+            sector_category=request.sector_category,
+            corporate_email=request.corporate_email.lower(),
+            email_domain=domain,
             size_band=request.size_band,
             website=request.website,
             description=request.description,
+            email_verified=False,
+            credentials_verified=False,
+            can_serve_public=False,
             verified=False,
         )
         self.db.add(org)
@@ -225,9 +262,15 @@ class ProfessionalService:
             name=row.name,
             slug=row.slug,
             industry=row.industry,
+            sector_category=row.sector_category,
             size_band=row.size_band,
             website=row.website,
             description=row.description,
+            corporate_email=row.corporate_email,
+            email_domain=row.email_domain,
+            email_verified=getattr(row, "email_verified", False) or False,
+            credentials_verified=getattr(row, "credentials_verified", False) or False,
+            can_serve_public=getattr(row, "can_serve_public", False) or False,
             verified=row.verified,
             created_at=row.created_at,
         )

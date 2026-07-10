@@ -105,6 +105,7 @@ class CreateProductRequest(BaseModel):
     is_digital: bool = False
     media_url: str | None = Field(default=None, max_length=2048)
     media_type: str | None = Field(default=None, max_length=16)
+    org_id: str | None = Field(default=None, max_length=64)
 
 
 class CartItemResponse(BaseModel):

@@ -10,3 +10,4 @@ class Settings(BaseSettings):
     cors_origins: list[str] = ["http://localhost:3000"]
     default_wallet_balance: float = 150.0
     default_currency: str = "GBP"
+    professional_service_url: str = "http://localhost:8004"

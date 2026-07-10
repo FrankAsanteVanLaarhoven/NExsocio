@@ -736,15 +736,63 @@ export interface BusinessProfile {
   tagline?: string | null;
 }
 
+export interface CorporateSector {
+  id: string;
+  label: string;
+  description: string;
+  examples: string;
+}
+
 export interface Organization {
   id: string;
   name: string;
   slug: string;
   industry?: string | null;
+  sector_category?: string | null;
   size_band?: string | null;
   website?: string | null;
   description?: string | null;
+  corporate_email?: string | null;
+  email_domain?: string | null;
+  email_verified?: boolean;
+  credentials_verified?: boolean;
+  can_serve_public?: boolean;
   verified: boolean;
+  created_at?: string | null;
+}
+
+export interface CorporateComplianceStatus {
+  org_id: string;
+  corporate_email?: string | null;
+  email_domain?: string | null;
+  sector_category?: string | null;
+  email_verified: boolean;
+  credentials_verified: boolean;
+  can_serve_public: boolean;
+  networking_trial_active: boolean;
+  networking_active: boolean;
+  trial_ends_at?: string | null;
+  subscription_status: string;
+  monthly_price_gbp: number;
+}
+
+export interface OrgNetworkingAccess {
+  org_id: string;
+  networking_allowed: boolean;
+  status: string;
+  trial_ends_at?: string | null;
+  message: string;
+}
+
+export interface CorporateServiceListing {
+  id: string;
+  org_id: string;
+  org_name: string;
+  sector_category: string;
+  title: string;
+  description: string;
+  price_hint?: string | null;
+  is_public: boolean;
   created_at?: string | null;
 }
 
@@ -760,4 +808,6 @@ export interface CorporateDashboard {
   memberships: OrgMembership[];
   insights: { label: string; value: string; trend?: string }[];
   hiring_posts: number;
+  compliance?: CorporateComplianceStatus[];
+  networking_access?: OrgNetworkingAccess[];
 }

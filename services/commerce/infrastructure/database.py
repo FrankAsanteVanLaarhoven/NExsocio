@@ -85,6 +85,7 @@ async def init_db(engine, default_balance: float = 150.0) -> None:
             "ALTER TABLE commerce.products ADD COLUMN IF NOT EXISTS media_url TEXT",
             "ALTER TABLE commerce.products ADD COLUMN IF NOT EXISTS media_type VARCHAR(16)",
             "ALTER TABLE commerce.wallets ADD COLUMN IF NOT EXISTS creator_balance DOUBLE PRECISION DEFAULT 0",
+            "ALTER TABLE commerce.products ADD COLUMN IF NOT EXISTS org_id UUID",
         ]:
             await conn.execute(text(stmt))
 
