@@ -66,12 +66,26 @@ AVATAR = MediaFormatSpec(
     aspect_hint="1:1 square",
 )
 
+CV = MediaFormatSpec(
+    id="cv",
+    label="CV / Resume",
+    mime_types=(
+        "application/pdf",
+        "application/msword",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    ),
+    extensions=(".pdf", ".doc", ".docx"),
+    max_bytes=10 * 1024 * 1024,
+    aspect_hint="PDF or Word — max 10MB",
+)
+
 SPECS: dict[str, MediaFormatSpec] = {
     "reel": REEL,
     "photo": PHOTO,
     "shop": SHOP,
     "business": BUSINESS,
     "avatar": AVATAR,
+    "cv": CV,
 }
 
 

@@ -578,6 +578,111 @@ export async function createCorporateService(
   });
 }
 
+export async function getCareerProfile(token: string): Promise<import("@nexus/types").CareerProfile> {
+  return request(PROFESSIONAL_URL, "/api/v1/career/profile", { headers: authHeaders(token) });
+}
+
+export async function upsertCareerProfile(
+  token: string,
+  data: Partial<import("@nexus/types").CareerProfile>
+): Promise<import("@nexus/types").CareerProfile> {
+  return request(PROFESSIONAL_URL, "/api/v1/career/profile", {
+    method: "PUT",
+    headers: authHeaders(token),
+    body: JSON.stringify(data),
+  });
+}
+
+export async function addWorkExperience(
+  token: string,
+  data: Omit<import("@nexus/types").WorkExperience, "id">
+): Promise<import("@nexus/types").WorkExperience> {
+  return request(PROFESSIONAL_URL, "/api/v1/career/experiences", {
+    method: "POST",
+    headers: authHeaders(token),
+    body: JSON.stringify(data),
+  });
+}
+
+export async function deleteWorkExperience(token: string, expId: string): Promise<void> {
+  await request(PROFESSIONAL_URL, `/api/v1/career/experiences/${expId}`, {
+    method: "DELETE",
+    headers: authHeaders(token),
+  });
+}
+
+export async function searchCareerPeople(params?: {
+  q?: string;
+  sector?: string;
+  skills?: string;
+}): Promise<import("@nexus/types").PeopleSearchResult[]> {
+  const qs = new URLSearchParams();
+  if (params?.q) qs.set("q", params.q);
+  if (params?.sector) qs.set("sector", params.sector);
+  if (params?.skills) qs.set("skills", params.skills);
+  const q = qs.toString();
+  return request(PROFESSIONAL_URL, `/api/v1/career/people${q ? `?${q}` : ""}`);
+}
+
+export async function listCareerJobs(params?: {
+  sector?: string;
+  q?: string;
+}): Promise<import("@nexus/types").JobPosting[]> {
+  const qs = new URLSearchParams();
+  if (params?.sector) qs.set("sector", params.sector);
+  if (params?.q) qs.set("q", params.q);
+  const q = qs.toString();
+  return request(PROFESSIONAL_URL, `/api/v1/career/jobs${q ? `?${q}` : ""}`);
+}
+
+export async function createJobPosting(
+  token: string,
+  data: {
+    org_id: string;
+    title: string;
+    description?: string;
+    sector_category: string;
+    location_type?: string;
+    employment_type?: string;
+    salary_range?: string;
+    skills_required?: string;
+    education_level?: string;
+  }
+): Promise<import("@nexus/types").JobPosting> {
+  return request(PROFESSIONAL_URL, "/api/v1/career/jobs", {
+    method: "POST",
+    headers: authHeaders(token),
+    body: JSON.stringify(data),
+  });
+}
+
+export async function applyToJob(
+  token: string,
+  jobId: string,
+  data?: { cover_note?: string; cv_url?: string }
+): Promise<import("@nexus/types").JobApplication> {
+  return request(PROFESSIONAL_URL, `/api/v1/career/jobs/${jobId}/apply`, {
+    method: "POST",
+    headers: authHeaders(token),
+    body: JSON.stringify(data ?? {}),
+  });
+}
+
+export async function listJobApplications(
+  token: string,
+  jobId: string
+): Promise<import("@nexus/types").JobApplication[]> {
+  return request(PROFESSIONAL_URL, `/api/v1/career/jobs/${jobId}/applications`, {
+    headers: authHeaders(token),
+  });
+}
+
+export async function listOrgJobs(token: string, orgId: string): Promise<import("@nexus/types").JobPosting[]> {
+  return request(PROFESSIONAL_URL, `/api/v1/career/jobs/org/${orgId}`, {
+    headers: authHeaders(token),
+  });
+}
+
 export async function listOrgMemberships(
   token: string
 ): Promise<import("@nexus/types").OrgMembership[]> {

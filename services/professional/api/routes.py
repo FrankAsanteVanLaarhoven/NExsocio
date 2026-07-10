@@ -7,13 +7,24 @@ from nexus_common.domain.models import ApiResponse, HealthResponse
 from services.professional.api.deps import (
     AuthContext,
     get_auth_context,
+    get_career_service,
     get_compliance_service,
     get_professional_service,
     get_settings,
     get_token,
 )
+from services.professional.application.career_service import CareerService
 from services.professional.application.corporate_compliance import CorporateComplianceService
 from services.professional.application.dtos import (
+    ApplyJobRequest,
+    CareerProfileResponse,
+    CreateExperienceRequest,
+    CreateJobRequest,
+    ExperienceResponse,
+    JobApplicationResponse,
+    JobPostingResponse,
+    PeopleSearchResult,
+    UpsertCareerProfileRequest,
     BusinessProfileResponse,
     CorporateComplianceStatus,
     CorporateCredentialResponse,
@@ -248,3 +259,97 @@ async def membership_check(
 ) -> ApiResponse[bool]:
     result = await service.user_belongs_to_org(auth.user_id, org_id)
     return ApiResponse(data=result)
+
+
+# --- Corporate careers (LinkedIn-class networking) ---
+
+
+@router.get("/career/profile", response_model=ApiResponse[CareerProfileResponse])
+async def get_career_profile(
+    auth: Annotated[AuthContext, Depends(get_auth_context)],
+    career: Annotated[CareerService, Depends(get_career_service)],
+) -> ApiResponse[CareerProfileResponse]:
+    return ApiResponse(data=await career.get_profile(auth.user_id, auth.display_name))
+
+
+@router.put("/career/profile", response_model=ApiResponse[CareerProfileResponse])
+async def upsert_career_profile(
+    request: UpsertCareerProfileRequest,
+    auth: Annotated[AuthContext, Depends(get_auth_context)],
+    career: Annotated[CareerService, Depends(get_career_service)],
+) -> ApiResponse[CareerProfileResponse]:
+    return ApiResponse(data=await career.upsert_profile(auth.user_id, auth.display_name, request))
+
+
+@router.post("/career/experiences", response_model=ApiResponse[ExperienceResponse])
+async def add_experience(
+    request: CreateExperienceRequest,
+    auth: Annotated[AuthContext, Depends(get_auth_context)],
+    career: Annotated[CareerService, Depends(get_career_service)],
+) -> ApiResponse[ExperienceResponse]:
+    return ApiResponse(data=await career.add_experience(auth.user_id, request))
+
+
+@router.delete("/career/experiences/{exp_id}", response_model=ApiResponse[dict])
+async def delete_experience(
+    exp_id: UUID,
+    auth: Annotated[AuthContext, Depends(get_auth_context)],
+    career: Annotated[CareerService, Depends(get_career_service)],
+) -> ApiResponse[dict]:
+    await career.delete_experience(auth.user_id, exp_id)
+    return ApiResponse(data={"deleted": True})
+
+
+@router.get("/career/people", response_model=ApiResponse[list[PeopleSearchResult]])
+async def search_people(
+    career: Annotated[CareerService, Depends(get_career_service)],
+    q: str | None = Query(default=None),
+    sector: str | None = Query(default=None),
+    skills: str | None = Query(default=None),
+) -> ApiResponse[list[PeopleSearchResult]]:
+    return ApiResponse(data=await career.search_people(query=q, sector=sector, skills=skills))
+
+
+@router.get("/career/jobs", response_model=ApiResponse[list[JobPostingResponse]])
+async def list_jobs(
+    career: Annotated[CareerService, Depends(get_career_service)],
+    sector: str | None = Query(default=None),
+    q: str | None = Query(default=None),
+) -> ApiResponse[list[JobPostingResponse]]:
+    return ApiResponse(data=await career.list_jobs(sector=sector, query=q))
+
+
+@router.post("/career/jobs", response_model=ApiResponse[JobPostingResponse])
+async def create_job(
+    request: CreateJobRequest,
+    auth: Annotated[AuthContext, Depends(get_auth_context)],
+    career: Annotated[CareerService, Depends(get_career_service)],
+) -> ApiResponse[JobPostingResponse]:
+    return ApiResponse(data=await career.create_job(auth.user_id, request.org_id, request))
+
+
+@router.get("/career/jobs/org/{org_id}", response_model=ApiResponse[list[JobPostingResponse]])
+async def list_org_jobs(
+    org_id: UUID,
+    career: Annotated[CareerService, Depends(get_career_service)],
+) -> ApiResponse[list[JobPostingResponse]]:
+    return ApiResponse(data=await career.list_org_jobs(org_id))
+
+
+@router.post("/career/jobs/{job_id}/apply", response_model=ApiResponse[JobApplicationResponse])
+async def apply_to_job(
+    job_id: UUID,
+    request: ApplyJobRequest,
+    auth: Annotated[AuthContext, Depends(get_auth_context)],
+    career: Annotated[CareerService, Depends(get_career_service)],
+) -> ApiResponse[JobApplicationResponse]:
+    return ApiResponse(data=await career.apply_job(auth.user_id, auth.display_name, job_id, request))
+
+
+@router.get("/career/jobs/{job_id}/applications", response_model=ApiResponse[list[JobApplicationResponse]])
+async def list_applications(
+    job_id: UUID,
+    auth: Annotated[AuthContext, Depends(get_auth_context)],
+    career: Annotated[CareerService, Depends(get_career_service)],
+) -> ApiResponse[list[JobApplicationResponse]]:
+    return ApiResponse(data=await career.list_job_applications(auth.user_id, job_id))

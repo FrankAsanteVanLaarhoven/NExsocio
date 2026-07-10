@@ -1,4 +1,4 @@
-export type MediaContext = "reel" | "photo" | "shop" | "business" | "avatar";
+export type MediaContext = "reel" | "photo" | "shop" | "business" | "avatar" | "cv";
 
 export interface MediaFormatSpec {
   id: MediaContext;
@@ -60,6 +60,16 @@ export const MEDIA_SPECS: Record<MediaContext, MediaFormatSpec> = {
     maxBytes: 10 * 1024 * 1024,
     aspectHint: "1:1 square",
     platforms: "Profile",
+  },
+  cv: {
+    id: "cv",
+    label: "CV / Resume",
+    accept:
+      "application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,.pdf,.doc,.docx",
+    extensions: [".pdf", ".doc", ".docx"],
+    maxBytes: 10 * 1024 * 1024,
+    aspectHint: "PDF or Word",
+    platforms: "Corporate careers",
   },
 };
 

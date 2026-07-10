@@ -12,6 +12,10 @@ import { useEffect, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { AuthHydrationGate } from "@/components/AuthHydrationGate";
 import { LoginGateway } from "@/components/auth/LoginGateway";
+import { CareerJobsPanel } from "@/components/corporate/CareerJobsPanel";
+import { CareerPeoplePanel } from "@/components/corporate/CareerPeoplePanel";
+import { CareerProfilePanel } from "@/components/corporate/CareerProfilePanel";
+import { CareerRecruiterPanel } from "@/components/corporate/CareerRecruiterPanel";
 import {
   createCorporateService,
   createOrganization,
@@ -39,7 +43,9 @@ export default function CorporatePage() {
   const [insights, setInsights] = useState<{ label: string; value: string }[]>([]);
   const [activeOrgId, setActiveOrgId] = useState<string | null>(null);
   const [sectorFilter, setSectorFilter] = useState("all");
-  const [tab, setTab] = useState<"companies" | "services" | "people" | "jobs">("companies");
+  const [tab, setTab] = useState<
+    "profile" | "people" | "jobs" | "recruit" | "companies" | "services"
+  >("profile");
 
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
@@ -169,11 +175,15 @@ export default function CorporatePage() {
     }
   }
 
+  const activeOrgName = memberships.find((m) => m.org_id === activeOrgId)?.org_name ?? "";
+
   const tabs = [
-    { id: "companies" as const, label: t("corporate.tabCompanies") },
-    { id: "services" as const, label: t("corporate.tabServices") },
+    { id: "profile" as const, label: t("corporate.tabProfile") },
     { id: "people" as const, label: t("corporate.tabPeople") },
     { id: "jobs" as const, label: t("corporate.tabJobs") },
+    { id: "recruit" as const, label: t("corporate.tabRecruit") },
+    { id: "companies" as const, label: t("corporate.tabCompanies") },
+    { id: "services" as const, label: t("corporate.tabServices") },
   ];
 
   return (
@@ -412,13 +422,15 @@ export default function CorporatePage() {
               </>
             )}
 
-            {(tab === "people" || tab === "jobs") && (
-              <Panel open title={tab === "people" ? t("corporate.tabPeople") : t("corporate.tabJobs")}>
-                {activeNetworking?.networking_allowed ? (
-                  <p className="text-xs text-[#8A8A8A]">
-                    {tab === "people" ? t("corporate.peopleComing") : t("corporate.jobsComing")}
-                  </p>
-                ) : (
+            {tab === "profile" && session && (
+              <CareerProfilePanel token={session.accessToken} sectors={sectors} />
+            )}
+
+            {tab === "people" && (
+              activeNetworking?.networking_allowed ? (
+                <CareerPeoplePanel sectors={sectors} />
+              ) : (
+                <Panel open title={t("corporate.tabPeople")}>
                   <div className="space-y-2 text-xs text-[#8A8A8A]">
                     <p>{t("corporate.networkingGate")}</p>
                     <p>{t("corporate.trialOffer")}</p>
@@ -428,8 +440,28 @@ export default function CorporatePage() {
                       </Button>
                     )}
                   </div>
-                )}
-              </Panel>
+                </Panel>
+              )
+            )}
+
+            {tab === "jobs" && session && (
+              <CareerJobsPanel token={session.accessToken} sectors={sectors} />
+            )}
+
+            {tab === "recruit" && session && (
+              activeOrgId ? (
+                <CareerRecruiterPanel
+                  token={session.accessToken}
+                  orgId={activeOrgId}
+                  orgName={activeOrgName}
+                  sectors={sectors}
+                  networking={activeNetworking}
+                />
+              ) : (
+                <Panel open title={t("corporate.tabRecruit")}>
+                  <p className="text-xs text-[#8A8A8A]">{t("sector.noOrg")}</p>
+                </Panel>
+              )
             )}
 
             {msg && <p className="text-xs text-[#00E5FF]">{msg}</p>}

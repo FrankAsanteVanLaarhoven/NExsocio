@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, Float, String, Text, func
+from sqlalchemy import Boolean, DateTime, Float, Integer, String, Text, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
@@ -86,6 +86,80 @@ class OrgMembershipModel(Base):
     user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False, index=True)
     role: Mapped[str] = mapped_column(String(32), nullable=False, default="member")
     title: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class CareerProfileModel(Base):
+    """LinkedIn-style career identity for the corporate lane."""
+
+    __tablename__ = "career_profiles"
+    __table_args__ = {"schema": "professional"}
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False, unique=True, index=True)
+    display_name: Mapped[str] = mapped_column(String(64), nullable=False)
+    headline: Mapped[str | None] = mapped_column(String(160), nullable=True)
+    summary: Mapped[str | None] = mapped_column(Text, nullable=True)
+    skills: Mapped[str | None] = mapped_column(Text, nullable=True)
+    cv_url: Mapped[str | None] = mapped_column(Text, nullable=True)
+    cv_filename: Mapped[str | None] = mapped_column(String(256), nullable=True)
+    location: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    sector_focus: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    open_to_work: Mapped[bool] = mapped_column(Boolean, default=True)
+    open_to_contract: Mapped[bool] = mapped_column(Boolean, default=False)
+    profile_score: Mapped[int] = mapped_column(Integer, default=0)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+
+class WorkExperienceModel(Base):
+    __tablename__ = "work_experiences"
+    __table_args__ = {"schema": "professional"}
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False, index=True)
+    company: Mapped[str] = mapped_column(String(128), nullable=False)
+    title: Mapped[str] = mapped_column(String(128), nullable=False)
+    location: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    start_year: Mapped[str | None] = mapped_column(String(8), nullable=True)
+    end_year: Mapped[str | None] = mapped_column(String(8), nullable=True)
+    is_current: Mapped[bool] = mapped_column(Boolean, default=False)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    sector: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class JobPostingModel(Base):
+    __tablename__ = "job_postings"
+    __table_args__ = {"schema": "professional"}
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    org_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False, index=True)
+    org_name: Mapped[str] = mapped_column(String(128), nullable=False)
+    posted_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False, index=True)
+    title: Mapped[str] = mapped_column(String(128), nullable=False)
+    description: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    sector_category: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    location_type: Mapped[str] = mapped_column(String(32), nullable=False, default="hybrid")
+    employment_type: Mapped[str] = mapped_column(String(32), nullable=False, default="full_time")
+    salary_range: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    skills_required: Mapped[str | None] = mapped_column(Text, nullable=True)
+    education_level: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    status: Mapped[str] = mapped_column(String(32), nullable=False, default="active", index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class JobApplicationModel(Base):
+    __tablename__ = "job_applications"
+    __table_args__ = {"schema": "professional"}
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    job_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False, index=True)
+    applicant_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False, index=True)
+    applicant_name: Mapped[str] = mapped_column(String(64), nullable=False)
+    cover_note: Mapped[str | None] = mapped_column(Text, nullable=True)
+    cv_url: Mapped[str | None] = mapped_column(Text, nullable=True)
+    status: Mapped[str] = mapped_column(String(32), nullable=False, default="submitted")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 

@@ -812,3 +812,70 @@ export interface CorporateDashboard {
   compliance?: CorporateComplianceStatus[];
   networking_access?: OrgNetworkingAccess[];
 }
+
+export interface WorkExperience {
+  id: string;
+  company: string;
+  title: string;
+  location?: string | null;
+  start_year?: string | null;
+  end_year?: string | null;
+  is_current: boolean;
+  description?: string | null;
+  sector?: string | null;
+}
+
+export interface CareerProfile {
+  user_id: string;
+  display_name: string;
+  headline?: string | null;
+  summary?: string | null;
+  skills?: string | null;
+  cv_url?: string | null;
+  cv_filename?: string | null;
+  location?: string | null;
+  sector_focus?: string | null;
+  open_to_work: boolean;
+  open_to_contract: boolean;
+  profile_score: number;
+  experiences: WorkExperience[];
+}
+
+export interface PeopleSearchResult {
+  user_id: string;
+  display_name: string;
+  headline?: string | null;
+  skills?: string | null;
+  location?: string | null;
+  sector_focus?: string | null;
+  profile_score: number;
+  open_to_work: boolean;
+  open_to_contract: boolean;
+}
+
+export interface JobPosting {
+  id: string;
+  org_id: string;
+  org_name: string;
+  title: string;
+  description: string;
+  sector_category: string;
+  location_type: string;
+  employment_type: string;
+  salary_range?: string | null;
+  skills_required?: string | null;
+  education_level?: string | null;
+  status: string;
+  created_at?: string | null;
+}
+
+export interface JobApplication {
+  id: string;
+  job_id: string;
+  applicant_id: string;
+  applicant_name: string;
+  cover_note?: string | null;
+  cv_url?: string | null;
+  status: string;
+  created_at?: string | null;
+}

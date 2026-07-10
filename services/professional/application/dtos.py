@@ -150,3 +150,110 @@ class CorporateDashboardResponse(BaseModel):
     hiring_posts: int = 0
     compliance: list[CorporateComplianceStatus] = []
     networking_access: list[OrgNetworkingAccess] = []
+
+
+class UpsertCareerProfileRequest(BaseModel):
+    headline: str | None = Field(default=None, max_length=160)
+    summary: str | None = Field(default=None, max_length=2000)
+    skills: str | None = Field(default=None, max_length=1000)
+    cv_url: str | None = Field(default=None, max_length=2048)
+    cv_filename: str | None = Field(default=None, max_length=256)
+    location: str | None = Field(default=None, max_length=128)
+    sector_focus: str | None = Field(default=None, max_length=64)
+    open_to_work: bool | None = None
+    open_to_contract: bool | None = None
+
+
+class ExperienceResponse(BaseModel):
+    id: UUID
+    company: str
+    title: str
+    location: str | None = None
+    start_year: str | None = None
+    end_year: str | None = None
+    is_current: bool = False
+    description: str | None = None
+    sector: str | None = None
+
+
+class CareerProfileResponse(BaseModel):
+    user_id: UUID
+    display_name: str
+    headline: str | None = None
+    summary: str | None = None
+    skills: str | None = None
+    cv_url: str | None = None
+    cv_filename: str | None = None
+    location: str | None = None
+    sector_focus: str | None = None
+    open_to_work: bool = True
+    open_to_contract: bool = False
+    profile_score: int = 0
+    experiences: list[ExperienceResponse] = []
+
+
+class CreateExperienceRequest(BaseModel):
+    company: str = Field(..., min_length=1, max_length=128)
+    title: str = Field(..., min_length=1, max_length=128)
+    location: str | None = Field(default=None, max_length=128)
+    start_year: str | None = Field(default=None, max_length=8)
+    end_year: str | None = Field(default=None, max_length=8)
+    is_current: bool = False
+    description: str | None = Field(default=None, max_length=2000)
+    sector: str | None = Field(default=None, max_length=64)
+
+
+class PeopleSearchResult(BaseModel):
+    user_id: UUID
+    display_name: str
+    headline: str | None = None
+    skills: str | None = None
+    location: str | None = None
+    sector_focus: str | None = None
+    profile_score: int = 0
+    open_to_work: bool = True
+    open_to_contract: bool = False
+
+
+class CreateJobRequest(BaseModel):
+    org_id: UUID
+    title: str = Field(..., min_length=1, max_length=128)
+    description: str = Field(default="", max_length=4000)
+    sector_category: str = Field(..., min_length=2, max_length=64)
+    location_type: str = Field(default="hybrid", pattern=r"^(remote|hybrid|onsite)$")
+    employment_type: str = Field(default="full_time", pattern=r"^(full_time|part_time|contract|intern)$")
+    salary_range: str | None = Field(default=None, max_length=64)
+    skills_required: str | None = Field(default=None, max_length=500)
+    education_level: str | None = Field(default=None, max_length=64)
+
+
+class JobPostingResponse(BaseModel):
+    id: UUID
+    org_id: UUID
+    org_name: str
+    title: str
+    description: str
+    sector_category: str
+    location_type: str
+    employment_type: str
+    salary_range: str | None = None
+    skills_required: str | None = None
+    education_level: str | None = None
+    status: str
+    created_at: datetime | None = None
+
+
+class ApplyJobRequest(BaseModel):
+    cover_note: str | None = Field(default=None, max_length=1000)
+    cv_url: str | None = Field(default=None, max_length=2048)
+
+
+class JobApplicationResponse(BaseModel):
+    id: UUID
+    job_id: UUID
+    applicant_id: UUID
+    applicant_name: str
+    cover_note: str | None = None
+    cv_url: str | None = None
+    status: str
+    created_at: datetime | None = None

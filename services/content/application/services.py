@@ -6,6 +6,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from nexus_common.domain.enums import ContentVisibility, FeedType, PostSector, UserMode, ViewContext
+from nexus_common.domain.lane_guard import LANE_BUSINESS_DETAIL, detect_business_intent
 from nexus_common.domain.sector_rules import normalize_sector, validate_post_for_sector
 from nexus_common.safety.moderation import ModerationEngine
 from services.content.application.ai_compose import compose_with_ai
@@ -108,6 +109,8 @@ class ContentService:
             filter_preset=request.filter_preset,
             org_id=str(request.org_id) if request.org_id else None,
         )
+        if sector == PostSector.PERSONAL and detect_business_intent(body):
+            raise HTTPException(status_code=422, detail=LANE_BUSINESS_DETAIL)
         if sector == PostSector.BUSINESS_CORPORATE and request.org_id and token:
             await self._verify_org_membership(author_id, request.org_id, token)
 
