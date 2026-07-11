@@ -21,6 +21,12 @@ for port in 8001 8004; do
 done
 echo ""
 
+NGROK_USER_CONFIG="${HOME}/Library/Application Support/ngrok/ngrok.yml"
+NGROK_HAS_AUTH=false
+if [[ -f "${NGROK_USER_CONFIG}" ]] && grep -q "authtoken" "${NGROK_USER_CONFIG}" 2>/dev/null; then
+  NGROK_HAS_AUTH=true
+fi
+
 # ── Step 1: ngrok authtoken ──
 if [[ -z "${NGROK_AUTHTOKEN:-}" ]]; then
   if [[ -f "${ROOT}/.env.ngrok" ]]; then
@@ -31,7 +37,12 @@ if [[ -z "${NGROK_AUTHTOKEN:-}" ]]; then
   fi
 fi
 
-if [[ -z "${NGROK_AUTHTOKEN:-}" ]]; then
+if [[ -n "${NGROK_AUTHTOKEN:-}" ]]; then
+  ngrok config add-authtoken "${NGROK_AUTHTOKEN}" 2>/dev/null || true
+  NGROK_HAS_AUTH=true
+fi
+
+if [[ "${NGROK_HAS_AUTH}" != "true" ]]; then
   echo "==> [1/3] ngrok authtoken required"
   echo ""
   echo "  1. Open https://dashboard.ngrok.com/get-started/your-authtoken"
@@ -46,8 +57,7 @@ if [[ -z "${NGROK_AUTHTOKEN:-}" ]]; then
   exit 1
 fi
 
-ngrok config add-authtoken "${NGROK_AUTHTOKEN}" 2>/dev/null || true
-echo "    ngrok authtoken configured"
+echo "    ngrok authtoken configured ✓"
 echo ""
 
 # ── Step 2: Quick tunnel test ──
@@ -80,8 +90,14 @@ echo "==> [3/3] ngrok PAID + VPS"
 NGROK_CONFIG="${ROOT}/infrastructure/ngrok/ngrok.yml"
 if [[ ! -f "${NGROK_CONFIG}" ]]; then
   cp infrastructure/ngrok/ngrok.yml.example "${NGROK_CONFIG}"
-  sed -i '' "s/YOUR_NGROK_AUTHTOKEN/${NGROK_AUTHTOKEN}/" "${NGROK_CONFIG}" 2>/dev/null \
-    || sed -i "s/YOUR_NGROK_AUTHTOKEN/${NGROK_AUTHTOKEN}/" "${NGROK_CONFIG}"
+  TOKEN="${NGROK_AUTHTOKEN:-}"
+  if [[ -z "${TOKEN}" && -f "${NGROK_USER_CONFIG}" ]]; then
+    TOKEN=$(grep -E '^authtoken:' "${NGROK_USER_CONFIG}" | head -1 | awk '{print $2}' || true)
+  fi
+  if [[ -n "${TOKEN}" ]]; then
+    sed -i '' "s/YOUR_NGROK_AUTHTOKEN/${TOKEN}/" "${NGROK_CONFIG}" 2>/dev/null \
+      || sed -i "s/YOUR_NGROK_AUTHTOKEN/${TOKEN}/" "${NGROK_CONFIG}"
+  fi
 fi
 
 echo ""
